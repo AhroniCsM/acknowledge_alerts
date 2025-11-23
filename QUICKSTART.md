@@ -23,22 +23,25 @@ brew install grpcurl
 2. Go to **Settings → API Keys**
 3. Create or copy an **"Alerts, Rules and Tags API Key"**
 
-### Step 3: Configure the Script
+### Step 3: Run the Script
 
-Open `acknowledge_alerts.py` and update line 134:
-
-```python
-DEFAULT_API_KEY = 'YOUR_API_KEY_HERE'  # Replace with your key
-```
-
-If you're NOT in EU1 region, also update line 135:
-```python
-DEFAULT_REGION = 'eu1'  # Change to: us1, us2, eu1, eu2, ap1, ap2, or ap3
-```
-
-### Step 4: Run the Script
+Pass your API key as a command-line argument:
 
 ```bash
+python3 acknowledge_alerts.py 'YOUR_API_KEY_HERE'
+```
+
+If you're NOT in EU1 region, add the region:
+
+```bash
+python3 acknowledge_alerts.py 'YOUR_API_KEY_HERE' 'us1'
+```
+
+**Alternative:** Use environment variables (more secure):
+
+```bash
+export CORALOGIX_API_KEY='YOUR_API_KEY_HERE'
+export CORALOGIX_REGION='eu1'  # optional
 python3 acknowledge_alerts.py
 ```
 
@@ -70,19 +73,9 @@ Do you want to acknowledge ALL these incidents? (yes/no): yes
 ```
 
 
-### Environment Variables (Alternative to Editing Script)
-
-Instead of editing the script, you can use environment variables:
-
-```bash
-export CORALOGIX_API_KEY='your-api-key-here'
-export CORALOGIX_REGION='eu1'
-python3 acknowledge_alerts.py
-```
-
 ### Change Time Range
 
-By default, shows alerts from last 24 hours. To change, edit line 149 in `acknowledge_alerts.py`:
+By default, shows alerts from last 24 hours. To change, edit line 186 in `acknowledge_alerts.py`:
 
 ```python
 by_alert = manager.show_recent_alerts_summary(hours=48)  # Show last 48 hours
@@ -96,8 +89,11 @@ To automatically acknowledge alerts every hour:
 # Edit crontab
 crontab -e
 
-# Add this line (adjust path to your script location):
-0 * * * * cd /path/to/script && echo "yes" | python3 acknowledge_alerts.py >> /var/log/coralogix_ack.log 2>&1
+# Add this line (adjust path and API key):
+0 * * * * cd /path/to/script && echo "yes" | python3 acknowledge_alerts.py 'YOUR_API_KEY' >> /var/log/coralogix_ack.log 2>&1
+
+# Or using environment variables (more secure):
+0 * * * * export CORALOGIX_API_KEY='YOUR_API_KEY' && cd /path/to/script && echo "yes" | python3 acknowledge_alerts.py >> /var/log/coralogix_ack.log 2>&1
 ```
 
 ## 📞 Troubleshooting

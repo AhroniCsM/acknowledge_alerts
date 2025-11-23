@@ -48,26 +48,34 @@ cd acknowledge_alerts
    - Go to **Settings → API Keys**
    - Create or copy an **"Alerts, Rules and Tags API Key"**
 
-3. **Configure the script:**
+3. **Run the script:**
 
-Open `acknowledge_alerts.py` and update lines 134-135:
+Pass your API key as a command-line argument:
 
-```python
-DEFAULT_API_KEY = 'your-api-key-here'  # Replace with your key
-DEFAULT_REGION = 'eu1'  # Change if needed: us1, us2, eu1, eu2, ap1, ap2, ap3
+```bash
+python3 acknowledge_alerts.py 'your-api-key-here'
 ```
 
-4. **Run the script:**
+For regions other than EU1:
+
 ```bash
-python3 acknowledge_alerts.py
+python3 acknowledge_alerts.py 'your-api-key-here' 'us1'
 ```
 
 ## Usage Examples
 
 ### Basic Usage
 
+Pass your API key as a command-line argument:
+
 ```bash
-python3 acknowledge_alerts.py
+python3 acknowledge_alerts.py 'cxup_your_api_key_here'
+```
+
+For regions other than EU1:
+
+```bash
+python3 acknowledge_alerts.py 'cxup_your_api_key_here' 'us1'
 ```
 
 The script will:
@@ -76,19 +84,25 @@ The script will:
 3. Show you a summary with severity and count
 4. Ask for confirmation before acknowledging
 
-### Using Environment Variables
+### Using Environment Variables (More Secure)
 
-Instead of editing the script, you can use environment variables:
+You can use environment variables instead of command-line arguments:
 
 ```bash
-export CORALOGIX_API_KEY='your-api-key'
-export CORALOGIX_REGION='eu1'
+export CORALOGIX_API_KEY='cxup_your_api_key_here'
+export CORALOGIX_REGION='eu1'  # optional, defaults to eu1
 python3 acknowledge_alerts.py
+```
+
+### Get Help
+
+```bash
+python3 acknowledge_alerts.py --help
 ```
 
 ### Change Time Range
 
-Edit line 149 in `acknowledge_alerts.py` to change the time window:
+Edit line 186 in `acknowledge_alerts.py` to change the time window:
 
 ```python
 by_alert = manager.show_recent_alerts_summary(hours=48)  # Last 48 hours
@@ -102,9 +116,9 @@ Run automatically every hour:
 crontab -e
 ```
 
-Add this line:
+Add this line (using environment variables for security):
 ```bash
-0 * * * * cd /path/to/acknowledge_alerts && echo "yes" | python3 acknowledge_alerts.py >> /var/log/coralogix_ack.log 2>&1
+0 * * * * export CORALOGIX_API_KEY='your_key' && cd /path/to/acknowledge_alerts && echo "yes" | python3 acknowledge_alerts.py >> /var/log/coralogix_ack.log 2>&1
 ```
 
 ## Example Output
