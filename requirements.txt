@@ -1,0 +1,5 @@
+# No Python dependencies required
+# This script uses grpcurl, which must be installed separately:
+# macOS: brew install grpcurl
+# Linux: https://github.com/fullstorydev/grpcurl/releases
+
