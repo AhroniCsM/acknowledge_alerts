@@ -25,7 +25,7 @@ brew install grpcurl
 
 ### Step 3: Configure the Script
 
-Open `acknowledge_alerts_filtered.py` and update line 134:
+Open `acknowledge_alerts.py` and update line 134:
 
 ```python
 DEFAULT_API_KEY = 'YOUR_API_KEY_HERE'  # Replace with your key
@@ -39,7 +39,7 @@ DEFAULT_REGION = 'eu1'  # Change to: us1, us2, eu1, eu2, ap1, ap2, or ap3
 ### Step 4: Run the Script
 
 ```bash
-python3 acknowledge_alerts_filtered.py
+python3 acknowledge_alerts.py
 ```
 
 **That's it!** The script will:
@@ -69,17 +69,6 @@ Do you want to acknowledge ALL these incidents? (yes/no): yes
 ✓ Successfully acknowledged 8 incidents
 ```
 
-## 🔧 Advanced Options
-
-### Acknowledge ALL Old Incidents (Not Just Recent)
-
-If you want to clean up thousands of old unacknowledged incidents:
-
-```bash
-python3 acknowledge_alerts.py
-```
-
-**Warning:** This may take a while if you have many incidents.
 
 ### Environment Variables (Alternative to Editing Script)
 
@@ -88,12 +77,12 @@ Instead of editing the script, you can use environment variables:
 ```bash
 export CORALOGIX_API_KEY='your-api-key-here'
 export CORALOGIX_REGION='eu1'
-python3 acknowledge_alerts_filtered.py
+python3 acknowledge_alerts.py
 ```
 
 ### Change Time Range
 
-By default, shows alerts from last 24 hours. To change, edit line 149 in `acknowledge_alerts_filtered.py`:
+By default, shows alerts from last 24 hours. To change, edit line 149 in `acknowledge_alerts.py`:
 
 ```python
 by_alert = manager.show_recent_alerts_summary(hours=48)  # Show last 48 hours
@@ -108,7 +97,7 @@ To automatically acknowledge alerts every hour:
 crontab -e
 
 # Add this line (adjust path to your script location):
-0 * * * * cd /path/to/script && echo "yes" | python3 acknowledge_alerts_filtered.py >> /var/log/coralogix_ack.log 2>&1
+0 * * * * cd /path/to/script && echo "yes" | python3 acknowledge_alerts.py >> /var/log/coralogix_ack.log 2>&1
 ```
 
 ## 📞 Troubleshooting
@@ -129,26 +118,20 @@ crontab -e
   - eu2.coralogix.com → eu2
   - etc.
 
-## 🎯 What's the Difference?
+## 🎯 How It Works
 
-**acknowledge_alerts_filtered.py** (Recommended)
-- Shows only RECENT alerts (last 24 hours)
+The script intelligently filters alerts:
+- Shows only RECENT alerts (last 24 hours by default)
 - Groups by alert name
-- Fast and focused
-- ✅ Use this for daily operations
-
-**acknowledge_alerts.py** (Bulk cleanup)
-- Shows ALL unacknowledged incidents (including very old ones)
-- Can process thousands of incidents
-- Takes longer
-- ✅ Use once for initial cleanup
+- Fast and focused on what matters
+- ✅ Perfect for daily operations
 
 ## 📝 Files Included
 
-- `acknowledge_alerts_filtered.py` - Main script for recent alerts
-- `acknowledge_alerts.py` - Bulk acknowledgment script
+- `acknowledge_alerts.py` - Main script (shows recent alerts only)
 - `QUICKSTART.md` - This guide
 - `README.md` - Detailed documentation
+- `run_acknowledge.sh` - Shell wrapper
 
 ---
 

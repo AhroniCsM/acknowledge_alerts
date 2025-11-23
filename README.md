@@ -1,16 +1,24 @@
 # Coralogix Alert Acknowledgment Script
 
-This script automatically acknowledges all unacknowledged incidents/alerts in your Coralogix account.
+Automatically acknowledge Coralogix alerts using the gRPC API. This script intelligently filters and shows only recent unacknowledged alerts (last 24 hours) to help you manage active incidents efficiently.
 
-## Prerequisites
+## Features
 
-- Python 3.6 or higher
-- Coralogix API Key (Alerts, Rules and Tags API Key)
-- **grpcurl** - Command-line tool for gRPC
+- ✅ Shows only **recent** unacknowledged alerts (last 24 hours)
+- ✅ Groups incidents by alert name
+- ✅ Displays severity and incident count
+- ✅ Batch processing for efficiency
+- ✅ Easy configuration - just add your API key
+- ✅ Works with all Coralogix regions
 
-## Installation
+## Quick Start
 
-1. Install grpcurl:
+### Prerequisites
+
+1. **Python 3.6+** (already installed on most systems)
+2. **grpcurl** - Command-line tool for gRPC
+
+Install grpcurl:
 
 **macOS:**
 ```bash
@@ -18,213 +26,245 @@ brew install grpcurl
 ```
 
 **Linux:**
-Download from [grpcurl releases](https://github.com/fullstorydev/grpcurl/releases)
+```bash
+# Download from https://github.com/fullstorydev/grpcurl/releases
+```
 
 **Verify installation:**
 ```bash
 grpcurl --version
 ```
 
-2. No Python dependencies required (uses only standard library)
+### Setup
 
-## Usage
+1. **Clone this repository:**
+```bash
+git clone https://github.com/AhroniCsM/acknowledge_alerts.git
+cd acknowledge_alerts
+```
 
-### Quick Start (API Key Preconfigured)
+2. **Get your Coralogix API key:**
+   - Log into your Coralogix account
+   - Go to **Settings → API Keys**
+   - Create or copy an **"Alerts, Rules and Tags API Key"**
 
-The script is preconfigured with your API key and region. By default, it **acknowledges** incidents:
+3. **Configure the script:**
 
-**To ACKNOWLEDGE incidents (default):**
+Open `acknowledge_alerts.py` and update lines 134-135:
+
+```python
+DEFAULT_API_KEY = 'your-api-key-here'  # Replace with your key
+DEFAULT_REGION = 'eu1'  # Change if needed: us1, us2, eu1, eu2, ap1, ap2, ap3
+```
+
+4. **Run the script:**
 ```bash
 python3 acknowledge_alerts.py
 ```
 
-**To RESOLVE incidents:**
-```bash
-python3 acknowledge_alerts.py "" "" resolve
-```
+## Usage Examples
 
-Or use the shell wrapper:
-```bash
-./run_acknowledge.sh
-```
+### Basic Usage
 
-### Method 1: Using Environment Variables (Optional Override)
-
-You can override the default configuration using environment variables:
-
-```bash
-export CORALOGIX_API_KEY='different-api-key'
-export CORALOGIX_REGION='us1'  # Optional, default: eu1
-export CORALOGIX_ACTION='acknowledge'  # Optional, default: acknowledge (can be 'acknowledge' or 'resolve')
-
-python3 acknowledge_alerts.py
-```
-
-### Method 2: Using Command-Line Arguments
-
-```bash
-python3 acknowledge_alerts.py [api-key] [region] [action]
-```
-
-Examples:
-
-**Acknowledge incidents (default):**
 ```bash
 python3 acknowledge_alerts.py
 ```
 
-**Resolve incidents:**
+The script will:
+1. Fetch all unacknowledged incidents from the last 24 hours
+2. Group them by alert name
+3. Show you a summary with severity and count
+4. Ask for confirmation before acknowledging
+
+### Using Environment Variables
+
+Instead of editing the script, you can use environment variables:
+
 ```bash
-python3 acknowledge_alerts.py '' '' resolve
+export CORALOGIX_API_KEY='your-api-key'
+export CORALOGIX_REGION='eu1'
+python3 acknowledge_alerts.py
 ```
 
-**With custom API key:**
+### Change Time Range
+
+Edit line 149 in `acknowledge_alerts.py` to change the time window:
+
+```python
+by_alert = manager.show_recent_alerts_summary(hours=48)  # Last 48 hours
+```
+
+### Automate with Cron
+
+Run automatically every hour:
+
 ```bash
-python3 acknowledge_alerts.py 'your-api-key' 'eu1' 'acknowledge'
+crontab -e
+```
+
+Add this line:
+```bash
+0 * * * * cd /path/to/acknowledge_alerts && echo "yes" | python3 acknowledge_alerts.py >> /var/log/coralogix_ack.log 2>&1
+```
+
+## Example Output
+
+```
+================================================================================
+Coralogix Alert Acknowledgment Script (Filtered)
+================================================================================
+Region: eu1
+Started at: 2025-11-23 10:30:00
+================================================================================
+
+Fetching incidents from the last 24 hours...
+
+================================================================================
+Found 6 unacknowledged incidents from 6 unique alerts:
+================================================================================
+
+[1] KPS not sending metrics to Mimir
+    Severity: INCIDENT_SEVERITY_CRITICAL
+    Incidents: 1
+    Latest: 2025-11-23T15:57:02.356Z
+
+[2] postgres exporters missing metrics
+    Severity: INCIDENT_SEVERITY_WARNING
+    Incidents: 1
+    Latest: 2025-11-23T15:55:01.050Z
+
+[3] rds high cpu or load average
+    Severity: INCIDENT_SEVERITY_ERROR
+    Incidents: 1
+    Latest: 2025-11-23T16:07:02.931Z
+
+... (3 more alerts)
+
+================================================================================
+Do you want to acknowledge ALL these incidents? (yes/no): yes
+
+Acknowledging 6 incidents...
+  ✓ Acknowledged 6 incidents (Total: 6/6)
+
+================================================================================
+Successfully acknowledged: 6
+================================================================================
 ```
 
 ## Configuration
 
-### API Key
-
-The script is already configured with your Coralogix API key and region (eu1).
-
-If you need to use a different API key, you can:
-- Override via environment variable: `export CORALOGIX_API_KEY='new-key'`
-- Pass as command-line argument: `python3 acknowledge_alerts.py 'new-key'`
-- Edit the `DEFAULT_API_KEY` in the script
-
-To get a new API key from Coralogix:
-1. Log into your Coralogix account
-2. Go to Settings > API Keys
-3. Create or use an existing "Alerts, Rules and Tags API Key"
-
 ### Regions
 
-Available regions:
-- `us1` - US East (Ohio)
-- `us2` - US West (Oregon)
-- `eu1` - Europe (Ireland) - **Default**
-- `eu2` - Europe (Stockholm)
-- `ap1` - Asia Pacific (Mumbai)
-- `ap2` - Asia Pacific (Singapore)
+Available Coralogix regions:
 
-### Assignment (Optional)
+| Region Code | Domain | Description |
+|------------|--------|-------------|
+| `us1` | coralogix.us | US East (Ohio) |
+| `us2` | cx498.coralogix.com | US West (Oregon) |
+| `eu1` | coralogix.com | Europe (Ireland) |
+| `eu2` | eu2.coralogix.com | Europe (Stockholm) |
+| `ap1` | coralogix.in | Asia Pacific (Mumbai) |
+| `ap2` | coralogixsg.com | Asia Pacific (Singapore) |
+| `ap3` | ap3.coralogix.com | Asia Pacific |
 
-You can optionally assign acknowledged incidents to a specific user by providing their email address.
+### API Key Permissions
 
-## What the Script Does
+Make sure your API key has **"Alerts, Rules and Tags"** permissions. This allows the script to:
+- List incidents
+- Acknowledge incidents
 
-1. Connects to the Coralogix gRPC API
-2. Fetches all incidents with state "INCIDENT_STATE_TRIGGERED"
-3. Shows you a list of the first 10 incidents to be processed
-4. Asks for confirmation before proceeding
-5. Processes incidents in batches of 10 (acknowledges or resolves based on your choice)
-6. Provides a summary of successful and failed operations
+## How It Works
 
-## Difference Between Acknowledge and Resolve
-
-- **Acknowledge**: Marks the incident as acknowledged but keeps it open. The incident state changes from "triggered, unacknowledged" to "triggered, acknowledged"
-- **Resolve**: Closes the incident completely. The incident state changes to "resolved"
-
-**Default:** The script uses **acknowledge** by default, which is the most common action for managing active alerts.
-
-## Output
-
-The script provides:
-- List of all triggered incidents with details
-- Confirmation prompt before resolving
-- Progress updates for each batch being resolved
-- A final summary showing:
-  - Number of successfully resolved incidents
-  - Number of failed resolutions
-  - Total processed
-
-## Error Handling
-
-- If no API key is provided, the script exits with usage instructions
-- If API calls fail, error details are printed
-- The script exits with code 1 if any acknowledgments fail
-
-## Example Output
-
-**When Acknowledging (default):**
-```
-============================================================
-Coralogix Alert Acknowledgment Script
-============================================================
-Region: eu1
-Action: acknowledge
-Started at: 2025-11-23 10:30:00
-============================================================
-
-Fetching all incidents with state: INCIDENT_STATE_TRIGGERED...
-Found 5 incidents to acknowledge
-
-Showing first 10 incidents:
-
-[1] Incident Details:
-  ID: abc-123
-  Alert Name: High CPU Usage
-  Created: 2025-11-23T08:15:00Z
-  State: INCIDENT_STATE_TRIGGERED
-
-[2] Incident Details:
-  ID: def-456
-  Alert Name: Memory Alert
-  Created: 2025-11-23T09:30:00Z
-  State: INCIDENT_STATE_TRIGGERED
-
-... (3 more incidents)
-
-============================================================
-Do you want to acknowledge all 5 incidents? (yes/no): yes
-
-============================================================
-Acknowledging incidents...
-
-[Batch 1/1] Acknowledging 5 incidents...
-  ✓ Successfully acknowledged 5 incidents
-
-============================================================
-SUMMARY
-============================================================
-Successfully acknowledged: 5
-Failed to acknowledge: 0
-Total processed: 5
-Completed at: 2025-11-23 10:30:15
-============================================================
-```
-
-**When Resolving:**
-```bash
-python3 acknowledge_alerts.py '' '' resolve
-```
-
-Output will be similar but with "resolve" terminology.
+1. **Connects to Coralogix** via gRPC API using your API key
+2. **Fetches all incidents** with state `INCIDENT_STATE_TRIGGERED`
+3. **Filters** for only unacknowledged incidents (status `INCIDENT_STATUS_TRIGGERED`)
+4. **Time filters** to show only recent incidents (last 24 hours)
+5. **Groups** incidents by alert name for clarity
+6. **Batch processes** acknowledgments in groups of 50 for efficiency
 
 ## Troubleshooting
 
-### grpcurl Not Found
-If you get "grpcurl is not installed" error:
-- Install grpcurl using the instructions in the Prerequisites section
-- Verify it's in your PATH: `which grpcurl`
+### grpcurl not found
+```
+ERROR: grpcurl is not installed
+```
+**Solution:** Install grpcurl using `brew install grpcurl` (macOS) or download from the releases page
 
-### Invalid API Key
-If you get authentication errors, verify:
-- You're using the correct API key type (Alerts, Rules and Tags API Key)
-- The key is valid and not expired
-- You're using the correct region
+### Authentication error
+```
+Code: Unauthenticated
+```
+**Solution:** Check that:
+- Your API key is correct
+- The API key has "Alerts, Rules and Tags" permissions
+- No extra spaces in the API key
 
-### No Incidents Found
-If the script reports 0 incidents:
-- Check that you have triggered (unresolved) alerts in the Coralogix UI
-- Verify you're connected to the correct team/account
+### No incidents found
+```
+No unacknowledged incidents in the last 24 hours!
+```
+**Solution:** This is good! It means you have no recent unacknowledged alerts.
 
-### Connection Errors
-If you get connection errors:
-- Verify your internet connection
-- Check that the region is correct
-- Ensure port 443 is not blocked by your firewall
-- Ensure the Coralogix gRPC endpoint is accessible from your network
+### Wrong region
+```
+Connection error
+```
+**Solution:** Verify you're using the correct region for your Coralogix account:
+- Check your Coralogix URL
+- Update `DEFAULT_REGION` in the script
 
+## Files
+
+- `acknowledge_alerts.py` - Main script
+- `QUICKSTART.md` - Quick start guide
+- `README.md` - This file
+- `requirements.txt` - Dependencies info
+- `run_acknowledge.sh` - Shell wrapper script
+
+## Technical Details
+
+### Dependencies
+
+- Python 3.6+
+- grpcurl (external tool)
+
+No Python packages required - uses only standard library!
+
+### API Endpoints
+
+The script uses the Coralogix gRPC API:
+- **Service:** `com.coralogixapis.incidents.v1.IncidentsService`
+- **Methods:** `ListIncidents`, `AcknowledgeIncidents`
+
+### Incident States
+
+- `INCIDENT_STATE_TRIGGERED` - Alert is active
+- `INCIDENT_STATE_RESOLVED` - Alert is closed
+
+### Incident Status
+
+- `INCIDENT_STATUS_TRIGGERED` - Unacknowledged
+- `INCIDENT_STATUS_ACKNOWLEDGED` - Acknowledged (but still active)
+- `INCIDENT_STATUS_RESOLVED` - Resolved and closed
+
+## Support
+
+For issues or questions:
+- Open an issue on GitHub
+- Check the Coralogix documentation
+- Verify your API key permissions
+
+## License
+
+MIT License - Feel free to use and modify!
+
+## Contributing
+
+Contributions are welcome! Feel free to:
+- Report bugs
+- Suggest features
+- Submit pull requests
+
+---
+
+**Made with ❤️ for Coralogix users**
